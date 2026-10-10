@@ -1,5 +1,7 @@
-import { supabase } from '@/lib/supabase';
-import BookingForm from '@/components/BookingForm';
+// src/app/book/[slug]/page.tsx
+import { supabase } from "@/lib/supabase";
+import { notFound } from "next/navigation";
+import BookingForm from "@/components/BookingForm";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -8,43 +10,26 @@ interface PageProps {
 export default async function BookingPage({ params }: PageProps) {
   const { slug } = await params;
 
-  const { data: merchant } = await supabase
-    .from('merchants')
-    .select('*')
-    .eq('slug', slug)
-    .maybeSingle();
+  // Fetch tenant info by slug
+  const { data: tenant, error } = await supabase
+    .from("tenants")
+    .select("*")
+    .eq("slug", slug)
+    .single();
 
-  if (!merchant) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
-        <h1 className="text-xl font-bold text-gray-800 dark:text-white">
-          Merchant Not Found
-        </h1>
-      </div>
-    );
+  if (error || !tenant) {
+    notFound();
   }
 
-  const { data: services } = await supabase
-    .from('services')
-    .select('*')
-    .eq('merchant_id', merchant.id);
-
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-gray-900 py-10 px-4">
-      <div className="max-w-2xl mx-auto">
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">
-            {merchant.business_name}
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-            Select a service and pick a slot to complete your booking.
-          </p>
-        </div>
-        <BookingForm
-          merchantId={merchant.id}
-          whatsappNumber={merchant.whatsapp_number}
-          services={services || []}
-        />
+    <main className="min-h-screen bg-zinc-50 dark:bg-black text-zinc-950 dark:text-zinc-50 flex flex-col items-center justify-center p-6">
+      <div className="w-full max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-8 shadow-sm">
+        <h1 className="text-2xl font-bold mb-1">Book with {tenant.business_name}</h1>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
+          Select an available date and time for your appointment.
+        </p>
+
+        <BookingForm tenantId={tenant.id} />
       </div>
     </main>
   );
